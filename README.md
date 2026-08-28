@@ -553,13 +553,13 @@ export default class Login extends Component {
           onLoginFinished={
             (error, result) => {
               if (error) {
-                console.log("login has error: " + result.error);
-              } else if (result.isCancelled) {
+                console.log("login has error: " + JSON.stringify(error));
+              } else if (result?.isCancelled) {
                 console.log("login is cancelled.");
               } else {
                 AccessToken.getCurrentAccessToken().then(
                   (data) => {
-                    console.log(data.accessToken.toString())
+                    console.log(data ? "Access token available" : "No current access token")
                   }
                 )
               }
@@ -575,6 +575,11 @@ export default class Login extends Component {
 #### Requesting additional permissions with Login Manager
 
 You can also use the Login Manager with custom UI to perform Login.
+
+On Android, await a pending login or reauthorization before starting another.
+Overlapping calls reject with `E_LOGIN_IN_PROGRESS`; a missing foreground
+Activity rejects with `E_NO_ACTIVITY`. `getDefaultAudience()` returns `only_me`
+on both platforms, matching `setDefaultAudience()`.
 
 ```js
 // ...
@@ -602,6 +607,13 @@ LoginManager.logInWithPermissions(["public_profile"]).then(
 ```
 
 #### Get profile information
+
+`AccessToken.refreshCurrentAccessTokenAsync()` resolves with an `AccessTokenMap`
+on both platforms. On iOS, this replaces the raw permissions response returned
+by earlier versions. If the account changes or logs out during an iOS refresh,
+the promise rejects with `E_ACCESS_TOKEN_CHANGED` instead of returning another
+account's token. Neither token getter nor refresh is available for Limited Login;
+use `AuthenticationToken.getAuthenticationTokenIOS()` for that login mode.
 
 You can retrieve the profile information after a successful login attempt. The data returned will be related to the type of
 authentication you are using (limited or not) and the permission granted by the login method.
@@ -677,17 +689,17 @@ export default class Login extends Component {
         <LoginButton
           onLoginFinished={(error, result) => {
             if (error) {
-              console.log("login has error: " + result.error);
-            } else if (result.isCancelled) {
+              console.log("login has error: " + JSON.stringify(error));
+            } else if (result?.isCancelled) {
               console.log("login is cancelled.");
             } else {
               if (Platform.OS === "ios") {
                 AuthenticationToken.getAuthenticationTokenIOS().then((data) => {
-                  console.log(data?.authenticationToken);
+                  console.log(data ? "Authentication token available" : "No authentication token");
                 });
               } else {
                 AccessToken.getCurrentAccessToken().then((data) => {
-                  console.log(data?.accessToken.toString());
+                  console.log(data ? "Access token available" : "No current access token");
                 });
               }
             }
@@ -713,8 +725,11 @@ export default class Login extends Component {
     LoginManager,
   } from "react-native-fbsdk-next";
 
+  import { Platform } from "react-native";
+
   //...
 
+  async function loginWithLimitedTracking() {
   try {
     const result = await LoginManager.logInWithPermissions(
       [
@@ -724,19 +739,23 @@ export default class Login extends Component {
       "limited",
       "my_nonce", // Optional
     );
-    console.log(result);
+    if (result.isCancelled) {
+      console.log("Login cancelled");
+      return;
+    }
     if (Platform.OS === "ios") {
       // This token **cannot** be used to access the Graph API.
       // https://developers.facebook.com/docs/facebook-login/limited-login/
       const result = await AuthenticationToken.getAuthenticationTokenIOS();
-      console.log(result?.authenticationToken);
+      console.log(result ? "Authentication token available" : "No authentication token");
     } else {
       // This token can be used to access the Graph API.
       const result = await AccessToken.getCurrentAccessToken();
-      console.log(result?.accessToken);
+      console.log(result ? "Access token available" : "No current access token");
     }
   } catch (error) {
     console.log(error);
+  }
   }
 
   //...
@@ -747,6 +766,11 @@ export default class Login extends Component {
 #### Share dialogs
 
 All of the dialogs included are used in a similar way, with differing content types.
+
+Only one `show()` call per dialog module can be pending. Await it before opening
+another; overlapping calls reject with `E_DIALOG_IN_PROGRESS`. Success includes
+`isCancelled: false`, but a `postId` is not guaranteed. On Android, calls that
+require an Activity reject with `E_NO_ACTIVITY` when none is available.
 
 ```js
 // ...
@@ -764,109 +788,68 @@ const shareLinkContent = {
 // ...
 
 // Share the link using the share dialog.
-shareLinkWithShareDialog() {
-  var tmp = this;
-  ShareDialog.canShow(this.state.shareLinkContent).then(
-    function(canShow) {
-      if (canShow) {
-        return ShareDialog.show(tmp.state.shareLinkContent);
-      }
+async function shareLinkWithShareDialog() {
+  try {
+    if (!(await ShareDialog.canShow(shareLinkContent))) {
+      console.log("Sharing is unavailable on this device");
+      return;
     }
-  ).then(
-    function(result) {
-      if (result.isCancelled) {
-        console.log("Share cancelled");
-      } else {
-        console.log("Share successful with postId: " + result.postId);
-      }
-    },
-    function(error) {
-      console.log("Share failed with error: " + error);
-    }
-  );
+    const result = await ShareDialog.show(shareLinkContent);
+    console.log(result.isCancelled ? "Share cancelled" : "Share successful");
+  } catch (error) {
+    console.log("Share failed with error: " + error);
+  }
 }
 ```
 
 #### Share Photos
 
-See [SharePhotoContent](/js/models/FBSharePhotoContent.js) and [SharePhoto](/js/models/FBSharePhoto.js) to refer other options.
+See [SharePhotoContent](./src/models/FBSharePhotoContent.ts) and [SharePhoto](./src/models/FBSharePhoto.ts) for other options.
 
 ```js
 // ...
 
-import { ShareApi } from "react-native-fbsdk-next";
+import { ShareDialog } from "react-native-fbsdk-next";
 
 // ...
 
 const photoUri = "file://" + "/path/of/photo.png";
 const sharePhotoContent = {
-  contentType = "photo",
+  contentType: "photo",
   photos: [{ imageUrl: photoUri }],
 };
 
 // ...
 
-ShareDialog.show(tmp.state.sharePhotoContent);
+ShareDialog.show(sharePhotoContent).catch(console.error);
 ```
 
 #### Share Videos
 
-See [ShareVideoContent](/js/models/FBShareVideoContent.js) and [ShareVideo](/js/models/FBShareVideo.js) to refer other options.
+See [ShareVideoContent](./src/models/FBShareVideoContent.ts) and [ShareVideo](./src/models/FBShareVideo.ts) for other options.
 
 ```js
 // ...
 
-import { ShareApi } from "react-native-fbsdk-next";
+import { ShareDialog } from "react-native-fbsdk-next";
 
 // ...
 
 const videoUri = "file://" + "/path/of/video.mp4";
 const shareVideoContent = {
-  contentType = "video",
+  contentType: "video",
   video: { localUrl: videoUri },
 };
 
 // ...
 
-ShareDialog.show(tmp.state.shareVideoContent);
+ShareDialog.show(shareVideoContent).catch(console.error);
 ```
 
 #### Share API
 
-Your app must have the `publish_actions` permission approved to share through the share API. You should prefer to use the Share Dialogs for an easier and more consistent experience.
-
-```js
-// ...
-
-import { ShareApi } from 'react-native-fbsdk-next';
-
-// ...
-
-// Build up a shareable link.
-const shareLinkContent = {
-  contentType: "link",
-  contentUrl: "https://facebook.com",
-};
-
-// ...
-
-// Share using the share API.
-ShareApi.canShare(this.state.shareLinkContent).then(
-  var tmp = this;
-  function(canShare) {
-    if (canShare) {
-      return ShareApi.share(tmp.state.shareLinkContent, "/me", "Some message.");
-    }
-  }
-).then(
-  function(result) {
-    console.log("Share with ShareApi success.");
-  },
-  function(error) {
-    console.log("Share with ShareApi failed with error: " + error);
-  }
-);
-```
+This package does not export `ShareApi`. Use the [share dialogs](#share-dialogs)
+instead of examples for the older Facebook-maintained package.
 
 ### [App Events](https://developers.facebook.com/docs/app-events)
 
@@ -950,24 +933,36 @@ import { GraphRequest, GraphRequestManager } from 'react-native-fbsdk-next';
 // ...
 
 // Create response callback.
-_responseInfoCallback(error, result) {
+function responseInfoCallback(error, result) {
   if (error) {
     console.log("Error fetching data: " + error.toString());
   } else {
-    console.log("Success fetching data: " + result.toString());
+    console.log("Success fetching data: " + JSON.stringify(result));
   }
 }
 
 // Create a graph request asking for user information with a callback to handle the response.
 const infoRequest = new GraphRequest(
   "/me",
-  null,
-  this._responseInfoCallback,
+  {},
+  responseInfoCallback,
 );
 
 // Start the graph request.
 new GraphRequestManager().addRequest(infoRequest).start();
 ```
+
+`start(timeout)` accepts milliseconds on Android and iOS. Omit it or pass `0`
+to retain the native SDK default. Explicit timeouts must be integers from `0`
+to `2147483647`; invalid values throw before starting a request. iOS now honors
+positive timeouts, which were previously ignored.
+Calling `start()` without adding a request also throws instead of leaving an
+empty native batch pending indefinitely.
+
+Graph callbacks receive a nullable error and an object, array, or null result.
+The batch callback reports a connection-level outcome; inspect each request's
+error separately. Adding requests or replacing callbacks after `start()` does
+not change the callbacks for the already-started batch.
 
 ## Expo installation
 
@@ -1054,7 +1049,7 @@ The [expo-facebook](https://github.com/expo/expo-facebook) module was deprecated
 | expo-facebook | Supported | react-native-fbsdk-next |
 | --- | --- | --- |
 | [flushAsync()](https://docs.expo.dev/versions/v45.0.0/sdk/facebook/#flushasync) | ✅ | AppEventsLogger.flush() |
-| [getAdvertiserIDAsync()](https://docs.expo.dev/versions/v45.0.0/sdk/facebook/#getadvertiseridasync) | ❌ | Not supported |
+| [getAdvertiserIDAsync()](https://docs.expo.dev/versions/v45.0.0/sdk/facebook/#getadvertiseridasync) | ✅ (Android) | AppEventsLogger.getAdvertiserID() |
 | [getAnonymousIDAsync()](https://docs.expo.dev/versions/v45.0.0/sdk/facebook/#getanonymousidasync) | ✅ | AppEventsLogger.getAnonymousID() |
 | [getAttributionIDAsync()](https://docs.expo.dev/versions/v45.0.0/sdk/facebook/#getattributionidasync) | ✅ | AppEventsLogger.getAttributionID() |
 | [getAuthenticationCredentialAsync()](https://docs.expo.dev/versions/v45.0.0/sdk/facebook/#getauthenticationcredentialasync) | ✅ | AccessToken.accessToken |
@@ -1107,8 +1102,15 @@ To update the example app, you should be able to just run the refresh script:
 refresh-example.sh
 ```
 
-This will create a new app in the `RNFBSDKExample` directory, using the latest version of React Native.
-Next, it will patch the necessary files so you may run the example app.
+This builds a candidate with React Native 0.76.5 and CLI 15.0.1, matching the
+Objective-C templates used by the script, then patches and installs it. It does
+not upgrade the example to the latest React Native release.
+
+The original example is untouched until the candidate is ready. After success,
+the entire original directory is retained under the printed
+`.fbsdk-example-refresh.*/previous-example` path, including untracked files.
+Failed candidates are also retained for inspection. Review and remove these
+temporary directories yourself when they are no longer needed.
 
 Occasionally react-native version changes mean that there is some incompatibility
 between what the script expects to find in the fresh react-native app as it does
