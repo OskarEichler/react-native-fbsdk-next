@@ -49,7 +49,7 @@
   "license": "MIT",
   "files": [
     "android/src/main/AndroidManifest.xml",
-    "android/src/main/java/",
+    "android/src/main/java/**/*",
     "android/build.gradle",
     "ios",
     "lib",
@@ -61,7 +61,7 @@
     "tsconfig.json",
     "app.plugin.js",
     "expo-module.config.json",
-    "plugin/build/"
+    "plugin/build/**/*"
   ],
   "peerDependencies": {
     "expo": ">=47.0.0",
@@ -79,8 +79,8 @@
   "songstatsSourceAudit": {
     "releaseBase": "13.4.3",
     "upstreamBase": "8241b0b305237bc641d3f05d4ea4a640ae658c92",
-    "sourceCommit": "b80e590d2bc33193956a04bc61eca0909d0d4bfd",
-    "localSourceCommit": "78ff09161682a3068b67abe81db72302dc874a14",
+    "sourceCommit": "eabe9d14202612bf17d90a5e4da14521e017219c",
+    "localSourceCommit": "ddf6a1c11bccb3767a3e67eefa4836d11db49ac9",
     "pullRequests": [
       "https://github.com/thebergamo/react-native-fbsdk-next/pull/679",
       "https://github.com/thebergamo/react-native-fbsdk-next/pull/680",
@@ -94,7 +94,8 @@
       "https://github.com/thebergamo/react-native-fbsdk-next/pull/688",
       "https://github.com/thebergamo/react-native-fbsdk-next/pull/689",
       "https://github.com/thebergamo/react-native-fbsdk-next/pull/690",
-      "https://github.com/thebergamo/react-native-fbsdk-next/pull/691"
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/691",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/692"
     ],
     "limitations": [
       "Real Facebook login/sharing, device permission flows and assistive-technology interaction were not exercised.",
