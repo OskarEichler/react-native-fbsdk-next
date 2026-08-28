@@ -47,27 +47,6 @@
     "core"
   ],
   "license": "MIT",
-  "scripts": {
-    "build:plugin": "tsc --build plugin",
-    "clean:plugin": "expo-module clean plugin",
-    "lint:plugin": "eslint plugin/src/*",
-    "start": "react-native start",
-    "prepare": "bob build && npm run clean:plugin && npm run build:plugin",
-    "lint": "eslint ./src",
-    "test": "yarn validate:prettier && yarn validate:eslint && yarn jest",
-    "validate:eslint": "eslint \"src/**/*\"",
-    "validate:prettier": "prettier \"{src,jest,plugin/src}/**/*.{js,ts,tsx}\" --check",
-    "validate:prettier:fix": "prettier \"{src,jest,plugin/src}/**/*.{js,ts,tsx}\" --write",
-    "validate:ts": "tsc --noEmit",
-    "example:start": "cd ./RNFBSDKExample && yarn start",
-    "example:ios": "cd ./RNFBSDKExample/ios && pod install && yarn ios",
-    "example:android": "cd ./RNFBSDKExample && yarn android",
-    "example:clean": "cd RNFBSDKExample && \\rm -fr yarn.lock node_modules ios/Podfile.lock && cd ..",
-    "example:install": "cd RNFBSDKExample && yarn && if [ \"$(uname)\" = Darwin ]; then cd ios && pod install; fi",
-    "example:devcopy": "yarn prepare && cp -rv package.json android ios lib src *.podspec RNFBSDKExample/node_modules/react-native-fbsdk-next/",
-    "semantic-release": "semantic-release",
-    "jest": "jest"
-  },
   "files": [
     "android/src/main/AndroidManifest.xml",
     "android/src/main/java/",
@@ -93,62 +72,33 @@
       "optional": true
     }
   },
-  "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "@babel/runtime": "^7.23.9",
-    "@react-native-community/eslint-config": "^3.2.0",
-    "@semantic-release/changelog": "^5.0.1",
-    "@semantic-release/git": "9.0.0",
-    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "@tsconfig/node14": "^14.1.0",
-    "@types/react": "^18.2.79",
-    "@types/xml2js": "^0.4.14",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
-    "babel-jest": "^29.7.0",
-    "babel-plugin-module-resolver": "^5.0.0",
-    "conventional-changelog-conventionalcommits": "^9.1.0",
-    "eslint": "^8.56.0",
-    "expo": "^51.0.38",
-    "expo-module-scripts": "^3.4.0",
-    "jest": "^29.7.0",
-    "metro-react-native-babel-preset": "^0.77.0",
-    "prettier": "^3.2.4",
-    "react": "18.2.0",
-    "react-native": "^0.74.5",
-    "react-native-builder-bob": "^0.23.2",
-    "react-test-renderer": "18.2.0",
-    "semantic-release": "^25.0.2",
-    "typescript": "^5.3.3",
-    "xml2js": "^0.6.2"
-  },
-  "resolutions": {
-    "cliui": "^6",
-    "lru-cache": "^8"
-  },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "all",
-    "bracketSpacing": false,
-    "bracketSameLine": true,
-    "parser": "typescript"
-  },
   "react-native": "src/index.ts",
-  "react-native-builder-bob": {
-    "source": "src",
-    "output": "lib",
-    "targets": [
-      "commonjs",
-      "module",
-      "typescript"
-    ]
-  },
-  "eslintIgnore": [
-    "node_modules/",
-    "lib/"
-  ],
-  "packageManager": "yarn@4.12.0",
   "engines": {
     "node": ">=18"
+  },
+  "songstatsSourceAudit": {
+    "releaseBase": "13.4.3",
+    "upstreamBase": "8241b0b305237bc641d3f05d4ea4a640ae658c92",
+    "sourceCommit": "b80e590d2bc33193956a04bc61eca0909d0d4bfd",
+    "localSourceCommit": "78ff09161682a3068b67abe81db72302dc874a14",
+    "pullRequests": [
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/679",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/680",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/681",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/682",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/683",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/684",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/685",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/686",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/687",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/688",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/689",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/690",
+      "https://github.com/thebergamo/react-native-fbsdk-next/pull/691"
+    ],
+    "limitations": [
+      "Real Facebook login/sharing, device permission flows and assistive-technology interaction were not exercised.",
+      "Native SDK dependency constraints are unchanged."
+    ]
   }
 }
